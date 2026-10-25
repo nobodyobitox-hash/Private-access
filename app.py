@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import http.server
 import json
 import os
@@ -26,29 +27,31 @@ def save_db(db):
 HTML = """<!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Frost Pro - Secure Messenger</title>
     <style>
-        body { background: #0b141a; color: #e9edef; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        .header { background: #202c33; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #2a3942; }
-        .logo-area { display: flex; align-items: center; gap: 10px; font-weight: bold; font-size: 1.2rem; color: #38bdf8; }
-        .container { flex: 1; display: flex; flex-direction: column; max-width: 600px; width: 100%; margin: 0 auto; background: #0b141a; overflow: hidden; }
-        #auth-screen { padding: 40px 20px; text-align: center; margin: auto; background: #111b21; border-radius: 12px; width: 90%; max-width: 380px; box-shadow: 0 4px 20px rgba(0,0,0,0.6); }
-        input, button { width: 100%; padding: 12px; margin-top: 12px; background: #2a3942; color: #fff; border: none; border-radius: 8px; box-sizing: border-box; font-size: 0.95rem; }
+        * { box-sizing: border-box; }
+        body { background: #0b141a; color: #e9edef; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+        .header { background: #202c33; padding: 10px 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #2a3942; flex-shrink: 0; }
+        .logo-area { display: flex; align-items: center; gap: 8px; font-weight: bold; font-size: 1.1rem; color: #38bdf8; }
+        .container { flex: 1; display: flex; flex-direction: column; max-width: 600px; width: 100%; margin: 0 auto; background: #0b141a; overflow: hidden; height: 100%; }
+        #auth-screen { padding: 30px 20px; text-align: center; margin: auto; background: #111b21; border-radius: 12px; width: 90%; max-width: 380px; box-shadow: 0 4px 20px rgba(0,0,0,0.6); }
+        input[type="text"], button { width: 100%; padding: 12px; margin-top: 12px; background: #2a3942; color: #fff; border: none; border-radius: 8px; font-size: 0.95rem; }
         button { background: #38bdf8; color: #0f172a; font-weight: bold; cursor: pointer; }
         button:hover { background: #0ea5e9; }
-        .chat-container { display: none; flex-direction: column; height: 100%; width: 100%; }
+        .chat-container { display: none; flex-direction: column; height: 100%; width: 100%; overflow: hidden; }
         .chat-messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; background-image: radial-gradient(#111b21 1px, transparent 1px); background-size: 20px 20px; }
         .msg { max-width: 75%; padding: 10px 14px; border-radius: 8px; font-size: 0.9rem; word-break: break-all; position: relative; box-shadow: 0 1px 0.5px rgba(0,0,0,0.3); }
         .msg.sent { background: #0369a1; align-self: flex-end; border-top-right-radius: 0; }
         .msg.received { background: #202c33; align-self: flex-start; border-top-left-radius: 0; }
         .msg img { max-width: 100%; border-radius: 6px; margin-top: 5px; }
         .msg-meta { font-size: 0.7rem; color: #bae6fd; text-align: right; margin-top: 4px; display: flex; align-items: center; justify-content: flex-end; gap: 3px; }
-        .chat-input-bar { background: #202c33; padding: 10px 15px; display: flex; align-items: center; gap: 10px; }
+        .chat-input-bar { background: #202c33; padding: 10px 15px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
         .chat-input-bar input[type="text"] { margin: 0; flex: 1; background: #2a3942; }
-        .icon-btn { background: transparent; width: auto; padding: 8px; font-size: 1.2rem; cursor: pointer; margin: 0; color: #8696a0; }
-        .profile-badge { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; background: #111b21; padding: 8px 12px; border-radius: 8px; margin: 10px; }
-        .avatar { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; background: #374151; display: flex; align-items: center; justify-content: center; font-weight: bold; overflow:hidden; }
+        .icon-btn { background: transparent; width: auto; padding: 8px; font-size: 1.2rem; cursor: pointer; margin: 0; color: #8696a0; border: none; }
+        .profile-badge { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; background: #111b21; padding: 8px 12px; border-radius: 8px; margin: 8px; flex-shrink: 0; }
+        .avatar { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; background: #374151; display: flex; align-items: center; justify-content: center; font-weight: bold; overflow:hidden; flex-shrink: 0; }
         .avatar img { width:100%; height:100%; object-fit:cover; }
     </style>
 </head>
@@ -68,23 +71,23 @@ HTML = """<!DOCTYPE html>
         <div class="chat-container" id="chatScreen">
             <div class="profile-badge" id="profileBadge">
                 <div class="avatar" id="userAvatarBox">U</div>
-                <div style="flex:1;">
+                <div style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                     <strong id="profileName"></strong><br>
                     <span style="color: #38bdf8; font-size: 0.75rem;" id="profileNumber"></span>
                 </div>
-                <label style="cursor:pointer; font-size: 0.75rem; background: #2a3942; padding: 5px 8px; border-radius: 6px;">
+                <label style="cursor:pointer; font-size: 0.75rem; background: #2a3942; padding: 6px 10px; border-radius: 6px; white-space:nowrap;">
                     Edit Avatar <input type="file" accept="image/*" style="display:none;" onchange="updateAvatar(this)">
                 </label>
             </div>
             <div class="chat-messages" id="chatStream"></div>
+            <div id="previewContainer" style="padding: 4px 15px; font-size: 0.75rem; color: #38bdf8; background:#111b21; display:none;">Image Attached ✓</div>
             <div class="chat-input-bar">
                 <label class="icon-btn" title="Send Image">
                     📷 <input type="file" id="imageInput" accept="image/*" style="display:none;" onchange="previewMedia(this)">
                 </label>
-                <input type="text" id="msgText" placeholder="Type a message..." onkeydown="if(event.key==='Enter') sendMessage()">
-                <button class="icon-btn" onclick="sendMessage()" style="background:#38bdf8; color:#0f172a; border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center;">➤</button>
+                <input type="text" id="msgText" placeholder="Type a message..." onkeypress="if(event.key === 'Enter') { sendMessage(); return false; }">
+                <button class="icon-btn" onclick="sendMessage()" style="background:#38bdf8; color:#0f172a; border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">➤</button>
             </div>
-            <div id="previewContainer" style="padding: 2px 15px; font-size: 0.75rem; color: #38bdf8; display:none;">Image Attached ✓</div>
         </div>
     </div>
     <script>
@@ -145,14 +148,16 @@ HTML = """<!DOCTYPE html>
         }
 
         function sendMessage() {
-            let text = document.getElementById('msgText').value.trim();
+            let textInput = document.getElementById('msgText');
+            let text = textInput.value.trim();
             if(!text && !selectedImageBase64) return;
+            
             fetch('/api/chat', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({username: currentUser, text: text, image: selectedImageBase64})
             }).then(() => {
-                document.getElementById('msgText').value = "";
+                textInput.value = "";
                 selectedImageBase64 = "";
                 document.getElementById('previewContainer').style.display = 'none';
                 document.getElementById('imageInput').value = "";
@@ -166,13 +171,19 @@ HTML = """<!DOCTYPE html>
                 let box = document.getElementById('chatStream');
                 box.innerHTML = data.map(m => {
                     let isMe = m.username === currentUser;
+                    let timeStr = "";
+                    try {
+                        timeStr = m.time.split(' ')[1].substring(0,5);
+                    } catch(e) {
+                        timeStr = "12:00";
+                    }
                     return `
                         <div class="msg ${isMe ? 'sent' : 'received'}">
                             ${!isMe ? '<strong style="color: #38bdf8; font-size: 0.8rem; display:block; margin-bottom: 2px;">'+m.username+'</strong>' : ''}
                             ${m.text ? '<div>'+m.text+'</div>' : ''}
                             ${m.image ? '<img src="'+m.image+'">' : ''}
                             <div class="msg-meta">
-                                <span>${m.time.split(' ')[1].substring(0,5)}</span>
+                                <span>'+timeStr+'</span>
                                 ${isMe ? '<span style="color: #38bdf8; font-weight: bold;">✓✓</span>' : ''}
                             </div>
                         </div>
@@ -190,15 +201,15 @@ class Handler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == '/' or self.path == '/index.html':
             self.send_response(200)
-            self.send_header("Content-type", "text/html")
+            self.send_header("Content-type", "text/html; charset=utf-8")
             self.end_headers()
-            self.wfile.write(HTML.encode())
+            self.wfile.write(HTML.encode('utf-8'))
         elif self.path == '/api/chats':
             db = load_db()
             self.send_response(200)
-            self.send_header("Content-type", "application/json")
+            self.send_header("Content-type", "application/json; charset=utf-8")
             self.end_headers()
-            self.wfile.write(json.dumps(db["chats"]).encode())
+            self.wfile.write(json.dumps(db["chats"]).encode('utf-8'))
         else:
             self.send_response(404)
             self.end_headers()
@@ -220,9 +231,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
             res_data = db["users"][u]
             res_data["username"] = u
             self.send_response(200)
-            self.send_header("Content-type", "application/json")
+            self.send_header("Content-type", "application/json; charset=utf-8")
             self.end_headers()
-            self.wfile.write(json.dumps(res_data).encode())
+            self.wfile.write(json.dumps(res_data).encode('utf-8'))
 
         elif self.path == '/api/profile_pic':
             u = data.get("username")

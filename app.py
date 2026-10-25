@@ -46,7 +46,7 @@ HTML = """<!DOCTYPE html>
         .content-section.active { display: flex; }
         
         .nav-bar { background: #202c33; display: flex; border-top: 1px solid #2a3942; flex-shrink: 0; }
-        .nav-item { flex: 1; padding: 12px; text-align: center; color: #8696a0; font-size: 0.85rem; cursor: pointer; font-weight: bold; background: none; border: none; margin: 0; border-radius: 0; }
+        .nav-item { flex: 1; padding: 12px; text-align: center; color: #8696a0; font-size: 0.8rem; cursor: pointer; font-weight: bold; background: none; border: none; margin: 0; border-radius: 0; }
         .nav-item.active { color: #38bdf8; border-top: 2px solid #38bdf8; background: #111b21; }
 
         .chat-messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; background-image: radial-gradient(#111b21 1px, transparent 1px); background-size: 20px 20px; }
@@ -88,8 +88,8 @@ HTML = """<!DOCTYPE html>
         <div class="app-layout" id="appLayout">
             <div class="content-section active" id="sec-chats">
                 <div style="background: #111b21; padding: 8px 15px; font-size: 0.8rem; color: #38bdf8; border-bottom: 1px solid #2a3942; display: flex; justify-content: space-between; align-items: center;">
-                    <span id="activeChatTitle">Global Secure Channel</span>
-                    <button onclick="switchTab('active')" style="width: auto; padding: 3px 8px; margin: 0; font-size: 0.75rem; background: #2a3942; color: #e9edef;">Switch User</button>
+                    <span id="activeChatTitle">🌐 General Room (300+ Users)</span>
+                    <button onclick="switchTab('active')" style="width: auto; padding: 3px 8px; margin: 0; font-size: 0.75rem; background: #2a3942; color: #e9edef;">Select 1-to-1 DM</button>
                 </div>
                 <div class="chat-messages" id="chatStream"></div>
                 <div id="previewContainer" style="padding: 4px 15px; font-size: 0.75rem; color: #38bdf8; background:#111b21; display:none;">Image Attached ✓</div>
@@ -97,15 +97,25 @@ HTML = """<!DOCTYPE html>
                     <label class="icon-btn" title="Send Image">
                         📷 <input type="file" id="imageInput" accept="image/*" style="display:none;" onchange="previewMedia(this)">
                     </label>
-                    <input type="text" id="msgText" placeholder="Type a private message..." onkeypress="if(event.key === 'Enter') { sendMessage(); return false; }">
+                    <input type="text" id="msgText" placeholder="Type a message..." onkeypress="if(event.key === 'Enter') { sendMessage(); return false; }">
                     <button class="icon-btn" onclick="sendMessage()" style="background:#38bdf8; color:#0f172a; border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">➤</button>
                 </div>
             </div>
 
             <div class="content-section" id="sec-active">
                 <div class="active-chats-list">
-                    <h3 style="color: #38bdf8; margin-top:0;">Online Users</h3>
-                    <p style="color: #8696a0; font-size: 0.85rem;">Tap any user to start a direct secure conversation:</p>
+                    <h3 style="color: #38bdf8; margin-top:0;">1-to-1 Messenger</h3>
+                    <p style="color: #8696a0; font-size: 0.85rem;">Select any user for private secure chats, or jump back to the public lobby:</p>
+                    <div class="user-card" onclick="openChatWith('general')">
+                        <div class="user-info">
+                            <div class="mini-avatar" style="background:#0369a1;">🌐</div>
+                            <div>
+                                <strong>General Room (300+ Users)</strong><br>
+                                <span style="font-size:0.75rem; color:#8696a0;">Public community chat lobby</span>
+                            </div>
+                        </div>
+                        <button style="width:auto; padding:5px 10px; margin:0; font-size:0.75rem;">Open</button>
+                    </div>
                     <div id="usersListContainer"></div>
                 </div>
             </div>
@@ -130,8 +140,8 @@ HTML = """<!DOCTYPE html>
             </div>
 
             <div class="nav-bar">
-                <button class="nav-item active" id="nav-chats" onclick="switchTab('chats')">💬 Chat</button>
-                <button class="nav-item" id="nav-active" onclick="switchTab('active')">👥 Direct Messages</button>
+                <button class="nav-item active" id="nav-chats" onclick="switchTab('chats')">💬 Chat Room</button>
+                <button class="nav-item" id="nav-active" onclick="switchTab('active')">👤 1-to-1 DMs</button>
                 <button class="nav-item" id="nav-settings" onclick="switchTab('settings')">⚙️ Settings</button>
             </div>
         </div>
@@ -139,7 +149,7 @@ HTML = """<!DOCTYPE html>
     <script>
         let currentUser = "";
         let currentNumber = "";
-        let currentRecipient = "global";
+        let currentRecipient = "general";
         let selectedImageBase64 = "";
 
         function registerUser() {
@@ -185,10 +195,10 @@ HTML = """<!DOCTYPE html>
 
         function openChatWith(recipientName) {
             currentRecipient = recipientName;
-            if(recipientName === 'global') {
-                document.getElementById('activeChatTitle').innerText = "Global Secure Channel";
+            if(recipientName === 'general') {
+                document.getElementById('activeChatTitle').innerText = "🌐 General Room (300+ Users)";
             } else {
-                document.getElementById('activeChatTitle').innerText = "Private Chat: " + recipientName;
+                document.getElementById('activeChatTitle').innerText = "💬 1-to-1 Chat: " + recipientName;
             }
             switchTab('chats');
             loadChats();
@@ -204,18 +214,7 @@ HTML = """<!DOCTYPE html>
         function loadUsersList() {
             fetch('/api/users').then(res => res.json()).then(users => {
                 let listContainer = document.getElementById('usersListContainer');
-                let html = `
-                    <div class="user-card" onclick="openChatWith('global')">
-                        <div class="user-info">
-                            <div class="mini-avatar" style="background:#0369a1;">🌐</div>
-                            <div>
-                                <strong>Global Secure Channel</strong><br>
-                                <span style="font-size:0.75rem; color:#8696a0;">Public room for everyone</span>
-                            </div>
-                        </div>
-                        <button style="width:auto; padding:5px 10px; margin:0; font-size:0.75rem;">Open</button>
-                    </div>
-                `;
+                let html = "";
                 for(let uname in users) {
                     if(uname === currentUser) continue;
                     let uData = users[uname];
@@ -229,10 +228,12 @@ HTML = """<!DOCTYPE html>
                                     <span style="font-size:0.75rem; color:#38bdf8;">${uData.virtual_number}</span>
                                 </div>
                             </div>
-                            <button style="width:auto; padding:5px 10px; margin:0; font-size:0.75rem;">Message</button>
+                            <button style="width:auto; padding:5px 10px; margin:0; font-size:0.75rem;">Chat 1-to-1</button>
                         </div>
                     `;
                 }
+                let cards = listContainer.querySelectorAll('.user-card');
+                cards.forEach(c => c.remove());
                 listContainer.innerHTML = html;
             });
         }
@@ -293,8 +294,8 @@ HTML = """<!DOCTYPE html>
             fetch('/api/chats').then(res => res.json()).then(data => {
                 let box = document.getElementById('chatStream');
                 let filtered = data.filter(m => {
-                    if(currentRecipient === 'global') {
-                        return !m.recipient || m.recipient === 'global';
+                    if(currentRecipient === 'general') {
+                        return !m.recipient || m.recipient === 'general' || m.recipient === 'global';
                     } else {
                         return (m.username === currentUser && m.recipient === currentRecipient) ||
                                (m.username === currentRecipient && m.recipient === currentUser);
@@ -384,7 +385,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         elif self.path == '/api/chat':
             db["chats"].append({
                 "username": data.get("username"),
-                "recipient": data.get("recipient", "global"),
+                "recipient": data.get("recipient", "general"),
                 "text": data.get("text", ""),
                 "image": data.get("image", ""),
                 "time": str(datetime.now())

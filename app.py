@@ -109,12 +109,13 @@ HTML = """<!DOCTYPE html>
             <div class="content-section" id="sec-active">
                 <div class="active-chats-list">
                     <h3 style="color: #38bdf8; margin-top:0;">1-to-1 Private Messenger</h3>
-                    <p style="color: #8696a0; font-size: 0.85rem;">Enter a user's virtual number to start a private chat, or pick from online users below:</p>
+                    <p style="color: #8696a0; font-size: 0.85rem;">Enter a user's virtual number or tap an online user below:</p>
                     
                     <!-- Number Lookup Box -->
-                    <div style="background: #111b21; padding: 12px; border-radius: 10px; margin-bottom: 15px;">
-                        <input type="text" id="targetNumberInput" placeholder="Enter Virtual Number (e.g. +1 (334)...)" style="margin-top:0; background:#2a3942;">
-                        <button onclick="startChatByNumber()" style="margin-top:8px;">Start Private Chat by Number</button>
+                    <div style="background: #111b21; padding: 12px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #2a3942;">
+                        <label style="font-size: 0.75rem; color: #38bdf8; font-weight: bold;">LOOKUP BY VIRTUAL NUMBER</label>
+                        <input type="text" id="targetNumberInput" placeholder="e.g. +1 (334) 642-5856" style="margin-top:6px; background:#2a3942;">
+                        <button onclick="startChatByNumber()" style="margin-top:8px;">Open 1-to-1 Chat</button>
                     </div>
 
                     <div class="user-card" onclick="openChatWith('general', '🌐 General Room (300+ Users)')">

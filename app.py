@@ -41,17 +41,14 @@ HTML = """<!DOCTYPE html>
         button { background: #38bdf8; color: #0f172a; font-weight: bold; cursor: pointer; }
         button:hover { background: #0ea5e9; }
         
-        /* App Layout Sections */
         .app-layout { display: none; flex-direction: column; height: 100%; width: 100%; overflow: hidden; }
         .content-section { flex: 1; display: none; flex-direction: column; overflow: hidden; }
         .content-section.active { display: flex; }
         
-        /* Bottom Navigation Bar */
         .nav-bar { background: #202c33; display: flex; border-top: 1px solid #2a3942; flex-shrink: 0; }
         .nav-item { flex: 1; padding: 12px; text-align: center; color: #8696a0; font-size: 0.85rem; cursor: pointer; font-weight: bold; background: none; border: none; margin: 0; border-radius: 0; }
         .nav-item.active { color: #38bdf8; border-top: 2px solid #38bdf8; background: #111b21; }
 
-        /* Chats Section */
         .chat-messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; background-image: radial-gradient(#111b21 1px, transparent 1px); background-size: 20px 20px; }
         .msg { max-width: 75%; padding: 10px 14px; border-radius: 8px; font-size: 0.9rem; word-break: break-all; position: relative; box-shadow: 0 1px 0.5px rgba(0,0,0,0.3); }
         .msg.sent { background: #0369a1; align-self: flex-end; border-top-right-radius: 0; }
@@ -62,23 +59,25 @@ HTML = """<!DOCTYPE html>
         .chat-input-bar input[type="text"] { margin: 0; flex: 1; background: #2a3942; }
         .icon-btn { background: transparent; width: auto; padding: 8px; font-size: 1.2rem; cursor: pointer; margin: 0; color: #8696a0; border: none; }
 
-        /* Settings & Profile Section */
+        .active-chats-list { padding: 15px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+        .user-card { background: #111b21; padding: 12px 15px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; border-left: 4px solid #38bdf8; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+        .user-info { display: flex; align-items: center; gap: 12px; }
+        .mini-avatar { width: 40px; height: 40px; border-radius: 50%; background: #374151; display: flex; align-items: center; justify-content: center; font-weight: bold; overflow: hidden; }
+        .mini-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
         .settings-box { padding: 20px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; flex: 1; }
         .profile-card { background: #111b21; padding: 20px; border-radius: 12px; display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.4); }
         .avatar { width: 55px; height: 55px; border-radius: 50%; object-fit: cover; background: #374151; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem; overflow:hidden; flex-shrink: 0; }
         .avatar img { width:100%; height:100%; object-fit:cover; }
-        .active-chats-list { padding: 15px; overflow-y: auto; flex: 1; }
-        .chat-room-item { background: #111b21; padding: 12px 15px; border-radius: 8px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; border-left: 4px solid #38bdf8; }
     </style>
 </head>
 <body>
     <div class="header">
         <div class="logo-area">
-            <span>❄️</span> Frost Pro
+            <span>❄️</span> <span id="headerTitle">Frost Pro</span>
         </div>
     </div>
     <div class="container">
-        <!-- Auth Screen -->
         <div id="auth-screen">
             <h2>Frost Pro</h2>
             <p style="color: #8696a0; font-size: 0.85rem;">Secure Encrypted Messenger</p>
@@ -86,37 +85,31 @@ HTML = """<!DOCTYPE html>
             <button onclick="registerUser()">Connect & Generate Number</button>
         </div>
 
-        <!-- Main App Layout -->
         <div class="app-layout" id="appLayout">
-            <!-- Section 1: Active Chats Stream -->
             <div class="content-section active" id="sec-chats">
+                <div style="background: #111b21; padding: 8px 15px; font-size: 0.8rem; color: #38bdf8; border-bottom: 1px solid #2a3942; display: flex; justify-content: space-between; align-items: center;">
+                    <span id="activeChatTitle">Global Secure Channel</span>
+                    <button onclick="switchTab('active')" style="width: auto; padding: 3px 8px; margin: 0; font-size: 0.75rem; background: #2a3942; color: #e9edef;">Switch User</button>
+                </div>
                 <div class="chat-messages" id="chatStream"></div>
                 <div id="previewContainer" style="padding: 4px 15px; font-size: 0.75rem; color: #38bdf8; background:#111b21; display:none;">Image Attached ✓</div>
                 <div class="chat-input-bar">
                     <label class="icon-btn" title="Send Image">
                         📷 <input type="file" id="imageInput" accept="image/*" style="display:none;" onchange="previewMedia(this)">
                     </label>
-                    <input type="text" id="msgText" placeholder="Type a message..." onkeypress="if(event.key === 'Enter') { sendMessage(); return false; }">
+                    <input type="text" id="msgText" placeholder="Type a private message..." onkeypress="if(event.key === 'Enter') { sendMessage(); return false; }">
                     <button class="icon-btn" onclick="sendMessage()" style="background:#38bdf8; color:#0f172a; border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">➤</button>
                 </div>
             </div>
 
-            <!-- Section 2: Active Chats Overview -->
             <div class="content-section" id="sec-active">
                 <div class="active-chats-list">
-                    <h3 style="color: #38bdf8; margin-top:0;">Global Secure Channel</h3>
-                    <p style="color: #8696a0; font-size: 0.85rem;">Active participants communicating in real-time.</p>
-                    <div class="chat-room-item">
-                        <div>
-                            <strong>#general-secure-room</strong><br>
-                            <span style="font-size:0.75rem; color:#8696a0;">End-to-End Encrypted Feed</span>
-                        </div>
-                        <button onclick="switchTab('chats')" style="width:auto; padding:6px 12px; margin:0; font-size:0.75rem;">Open</button>
-                    </div>
+                    <h3 style="color: #38bdf8; margin-top:0;">Online Users</h3>
+                    <p style="color: #8696a0; font-size: 0.85rem;">Tap any user to start a direct secure conversation:</p>
+                    <div id="usersListContainer"></div>
                 </div>
             </div>
 
-            <!-- Section 3: Settings & Profile Section -->
             <div class="content-section" id="sec-settings">
                 <div class="settings-box">
                     <h3 style="color: #38bdf8; margin-top:0;">Profile & Settings</h3>
@@ -133,18 +126,12 @@ HTML = """<!DOCTYPE html>
                             Upload New Avatar <input type="file" accept="image/*" style="display:none;" onchange="updateAvatar(this)">
                         </label>
                     </div>
-                    <div style="background: #111b21; padding: 15px; border-radius: 12px; font-size: 0.85rem; color: #8696a0;">
-                        <strong>Frost Pro Protocol:</strong> Active<br>
-                        <strong>Encryption:</strong> Simulated E2EE<br>
-                        <strong>Server Status:</strong> Online (Render 24/7)
-                    </div>
                 </div>
             </div>
 
-            <!-- Bottom Navigation Bar -->
             <div class="nav-bar">
                 <button class="nav-item active" id="nav-chats" onclick="switchTab('chats')">💬 Chat</button>
-                <button class="nav-item" id="nav-active" onclick="switchTab('active')">👥 Active Chats</button>
+                <button class="nav-item" id="nav-active" onclick="switchTab('active')">👥 Direct Messages</button>
                 <button class="nav-item" id="nav-settings" onclick="switchTab('settings')">⚙️ Settings</button>
             </div>
         </div>
@@ -152,6 +139,7 @@ HTML = """<!DOCTYPE html>
     <script>
         let currentUser = "";
         let currentNumber = "";
+        let currentRecipient = "global";
         let selectedImageBase64 = "";
 
         function registerUser() {
@@ -173,8 +161,8 @@ HTML = """<!DOCTYPE html>
                 } else {
                     document.getElementById('userAvatarBox').innerText = u.charAt(0).toUpperCase();
                 }
-                loadChats();
-                setInterval(loadChats, 3000);
+                loadAppData();
+                setInterval(loadAppData, 3000);
             });
         }
 
@@ -188,10 +176,65 @@ HTML = """<!DOCTYPE html>
             } else if(tabName === 'active') {
                 document.getElementById('sec-active').classList.add('active');
                 document.getElementById('nav-active').classList.add('active');
+                loadUsersList();
             } else if(tabName === 'settings') {
                 document.getElementById('sec-settings').classList.add('active');
                 document.getElementById('nav-settings').classList.add('active');
             }
+        }
+
+        function openChatWith(recipientName) {
+            currentRecipient = recipientName;
+            if(recipientName === 'global') {
+                document.getElementById('activeChatTitle').innerText = "Global Secure Channel";
+            } else {
+                document.getElementById('activeChatTitle').innerText = "Private Chat: " + recipientName;
+            }
+            switchTab('chats');
+            loadChats();
+        }
+
+        function loadAppData() {
+            loadChats();
+            if(document.getElementById('sec-active').classList.contains('active')) {
+                loadUsersList();
+            }
+        }
+
+        function loadUsersList() {
+            fetch('/api/users').then(res => res.json()).then(users => {
+                let listContainer = document.getElementById('usersListContainer');
+                let html = `
+                    <div class="user-card" onclick="openChatWith('global')">
+                        <div class="user-info">
+                            <div class="mini-avatar" style="background:#0369a1;">🌐</div>
+                            <div>
+                                <strong>Global Secure Channel</strong><br>
+                                <span style="font-size:0.75rem; color:#8696a0;">Public room for everyone</span>
+                            </div>
+                        </div>
+                        <button style="width:auto; padding:5px 10px; margin:0; font-size:0.75rem;">Open</button>
+                    </div>
+                `;
+                for(let uname in users) {
+                    if(uname === currentUser) continue;
+                    let uData = users[uname];
+                    let avatarHtml = uData.profile_pic ? '<img src="'+uData.profile_pic+'">' : uname.charAt(0).toUpperCase();
+                    html += `
+                        <div class="user-card" onclick="openChatWith('${uname}')">
+                            <div class="user-info">
+                                <div class="mini-avatar">${avatarHtml}</div>
+                                <div>
+                                    <strong>${uname}</strong><br>
+                                    <span style="font-size:0.75rem; color:#38bdf8;">${uData.virtual_number}</span>
+                                </div>
+                            </div>
+                            <button style="width:auto; padding:5px 10px; margin:0; font-size:0.75rem;">Message</button>
+                        </div>
+                    `;
+                }
+                listContainer.innerHTML = html;
+            });
         }
 
         function previewMedia(input) {
@@ -230,7 +273,12 @@ HTML = """<!DOCTYPE html>
             fetch('/api/chat', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({username: currentUser, text: text, image: selectedImageBase64})
+                body: JSON.stringify({
+                    username: currentUser,
+                    recipient: currentRecipient,
+                    text: text,
+                    image: selectedImageBase64
+                })
             }).then(() => {
                 textInput.value = "";
                 selectedImageBase64 = "";
@@ -244,7 +292,16 @@ HTML = """<!DOCTYPE html>
             if(!currentUser) return;
             fetch('/api/chats').then(res => res.json()).then(data => {
                 let box = document.getElementById('chatStream');
-                box.innerHTML = data.map(m => {
+                let filtered = data.filter(m => {
+                    if(currentRecipient === 'global') {
+                        return !m.recipient || m.recipient === 'global';
+                    } else {
+                        return (m.username === currentUser && m.recipient === currentRecipient) ||
+                               (m.username === currentRecipient && m.recipient === currentUser);
+                    }
+                });
+
+                box.innerHTML = filtered.map(m => {
                     let isMe = m.username === currentUser;
                     let timeStr = "12:00";
                     try {
@@ -283,6 +340,12 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_header("Content-type", "application/json; charset=utf-8")
             self.end_headers()
             self.wfile.write(json.dumps(db["chats"]).encode('utf-8'))
+        elif self.path == '/api/users':
+            db = load_db()
+            self.send_response(200)
+            self.send_header("Content-type", "application/json; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(json.dumps(db["users"]).encode('utf-8'))
         else:
             self.send_response(404)
             self.end_headers()
@@ -321,6 +384,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         elif self.path == '/api/chat':
             db["chats"].append({
                 "username": data.get("username"),
+                "recipient": data.get("recipient", "global"),
                 "text": data.get("text", ""),
                 "image": data.get("image", ""),
                 "time": str(datetime.now())

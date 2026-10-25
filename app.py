@@ -78,6 +78,7 @@ HTML = """<!DOCTYPE html>
         </div>
     </div>
     <div class="container">
+        <!-- Auth Screen -->
         <div id="auth-screen">
             <h2>Frost Pro</h2>
             <p style="color: #8696a0; font-size: 0.85rem;">Secure Encrypted Messenger</p>
@@ -85,11 +86,13 @@ HTML = """<!DOCTYPE html>
             <button onclick="registerUser()">Connect & Generate Number</button>
         </div>
 
+        <!-- Main App Layout -->
         <div class="app-layout" id="appLayout">
+            <!-- Section 1: Chat Room View -->
             <div class="content-section active" id="sec-chats">
                 <div style="background: #111b21; padding: 8px 15px; font-size: 0.8rem; color: #38bdf8; border-bottom: 1px solid #2a3942; display: flex; justify-content: space-between; align-items: center;">
                     <span id="activeChatTitle">🌐 General Room (300+ Users)</span>
-                    <button onclick="switchTab('active')" style="width: auto; padding: 3px 8px; margin: 0; font-size: 0.75rem; background: #2a3942; color: #e9edef;">Select 1-to-1 DM</button>
+                    <button onclick="switchTab('active')" style="width: auto; padding: 3px 8px; margin: 0; font-size: 0.75rem; background: #2a3942; color: #e9edef;">Change Chat</button>
                 </div>
                 <div class="chat-messages" id="chatStream"></div>
                 <div id="previewContainer" style="padding: 4px 15px; font-size: 0.75rem; color: #38bdf8; background:#111b21; display:none;">Image Attached ✓</div>
@@ -102,16 +105,24 @@ HTML = """<!DOCTYPE html>
                 </div>
             </div>
 
+            <!-- Section 2: 1-to-1 DMs & Number Lookup -->
             <div class="content-section" id="sec-active">
                 <div class="active-chats-list">
-                    <h3 style="color: #38bdf8; margin-top:0;">1-to-1 Messenger</h3>
-                    <p style="color: #8696a0; font-size: 0.85rem;">Select any user for private secure chats, or jump back to the public lobby:</p>
-                    <div class="user-card" onclick="openChatWith('general')">
+                    <h3 style="color: #38bdf8; margin-top:0;">1-to-1 Private Messenger</h3>
+                    <p style="color: #8696a0; font-size: 0.85rem;">Enter a user's virtual number to start a private chat, or pick from online users below:</p>
+                    
+                    <!-- Number Lookup Box -->
+                    <div style="background: #111b21; padding: 12px; border-radius: 10px; margin-bottom: 15px;">
+                        <input type="text" id="targetNumberInput" placeholder="Enter Virtual Number (e.g. +1 (334)...)" style="margin-top:0; background:#2a3942;">
+                        <button onclick="startChatByNumber()" style="margin-top:8px;">Start Private Chat by Number</button>
+                    </div>
+
+                    <div class="user-card" onclick="openChatWith('general', '🌐 General Room (300+ Users)')">
                         <div class="user-info">
                             <div class="mini-avatar" style="background:#0369a1;">🌐</div>
                             <div>
                                 <strong>General Room (300+ Users)</strong><br>
-                                <span style="font-size:0.75rem; color:#8696a0;">Public community chat lobby</span>
+                                <span style="font-size:0.75rem; color:#8696a0;">Public community lobby</span>
                             </div>
                         </div>
                         <button style="width:auto; padding:5px 10px; margin:0; font-size:0.75rem;">Open</button>
@@ -120,6 +131,7 @@ HTML = """<!DOCTYPE html>
                 </div>
             </div>
 
+            <!-- Section 3: Settings -->
             <div class="content-section" id="sec-settings">
                 <div class="settings-box">
                     <h3 style="color: #38bdf8; margin-top:0;">Profile & Settings</h3>
@@ -139,6 +151,7 @@ HTML = """<!DOCTYPE html>
                 </div>
             </div>
 
+            <!-- Bottom Navigation Bar -->
             <div class="nav-bar">
                 <button class="nav-item active" id="nav-chats" onclick="switchTab('chats')">💬 Chat Room</button>
                 <button class="nav-item" id="nav-active" onclick="switchTab('active')">👤 1-to-1 DMs</button>
@@ -151,6 +164,7 @@ HTML = """<!DOCTYPE html>
         let currentNumber = "";
         let currentRecipient = "general";
         let selectedImageBase64 = "";
+        let globalUsersCache = {};
 
         function registerUser() {
             let u = document.getElementById('usernameInput').value.trim();
@@ -193,15 +207,35 @@ HTML = """<!DOCTYPE html>
             }
         }
 
-        function openChatWith(recipientName) {
+        function openChatWith(recipientName, displayName) {
             currentRecipient = recipientName;
-            if(recipientName === 'general') {
-                document.getElementById('activeChatTitle').innerText = "🌐 General Room (300+ Users)";
-            } else {
-                document.getElementById('activeChatTitle').innerText = "💬 1-to-1 Chat: " + recipientName;
-            }
+            document.getElementById('activeChatTitle').innerText = displayName;
             switchTab('chats');
             loadChats();
+        }
+
+        function startChatByNumber() {
+            let targetNum = document.getElementById('targetNumberInput').value.trim();
+            if(!targetNum) return alert("Please enter a virtual number!");
+            
+            let foundUsername = "";
+            for(let uname in globalUsersCache) {
+                if(globalUsersCache[uname].virtual_number.trim() === targetNum) {
+                    foundUsername = uname;
+                    break;
+                }
+            }
+
+            if(!foundUsername) {
+                return alert("No registered user found with number: " + targetNum);
+            }
+
+            if(foundUsername === currentUser) {
+                return alert("You cannot chat with yourself!");
+            }
+
+            openChatWith(foundUsername, "💬 Private Chat: " + foundUsername + " (" + targetNum + ")");
+            document.getElementById('targetNumberInput').value = "";
         }
 
         function loadAppData() {
@@ -213,6 +247,7 @@ HTML = """<!DOCTYPE html>
 
         function loadUsersList() {
             fetch('/api/users').then(res => res.json()).then(users => {
+                globalUsersCache = users;
                 let listContainer = document.getElementById('usersListContainer');
                 let html = "";
                 for(let uname in users) {
@@ -220,7 +255,7 @@ HTML = """<!DOCTYPE html>
                     let uData = users[uname];
                     let avatarHtml = uData.profile_pic ? '<img src="'+uData.profile_pic+'">' : uname.charAt(0).toUpperCase();
                     html += `
-                        <div class="user-card" onclick="openChatWith('${uname}')">
+                        <div class="user-card" onclick="openChatWith('${uname}', '💬 Private Chat: ${uname} (${uData.virtual_number})')">
                             <div class="user-info">
                                 <div class="mini-avatar">${avatarHtml}</div>
                                 <div>
@@ -232,8 +267,6 @@ HTML = """<!DOCTYPE html>
                         </div>
                     `;
                 }
-                let cards = listContainer.querySelectorAll('.user-card');
-                cards.forEach(c => c.remove());
                 listContainer.innerHTML = html;
             });
         }

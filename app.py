@@ -3,7 +3,7 @@ import http.server, json, os, random
 from datetime import datetime
 
 PORT = int(os.environ.get("PORT", 8080))
-DB_FILE = "frost_pro_db.json"
+DB_FILE = "coop_db.json"
 
 def db_load():
     if not os.path.exists(DB_FILE):
@@ -24,95 +24,95 @@ HTML = """<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Frost Pro - Secure Messenger</title>
+    <title>Coop Messenger - Secure & Private</title>
     <style>
         * { box-sizing: border-box; }
         body { background: #0b141a; color: #e9edef; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
-        .header { background: #202c33; padding: 12px 20px; font-weight: bold; color: #38bdf8; font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center; }
+        .header { background: #202c33; padding: 12px 20px; font-weight: bold; color: #00a884; font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a3942; }
         .container { flex: 1; display: flex; flex-direction: column; max-width: 600px; width: 100%; margin: 0 auto; overflow: hidden; }
-        #auth { padding: 40px 20px; text-align: center; margin: auto; background: #111b21; border-radius: 12px; width: 90%; max-width: 380px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        #auth { padding: 40px 20px; text-align: center; margin: auto; background: #111b21; border-radius: 12px; width: 90%; max-width: 380px; box-shadow: 0 4px 20px rgba(0,0,0,0.6); }
         input, button { width: 100%; padding: 12px; margin-top: 12px; background: #2a3942; color: #fff; border: none; border-radius: 8px; font-size: 0.95rem; }
-        button { background: #38bdf8; color: #0f172a; font-weight: bold; cursor: pointer; }
-        button:hover { background: #0ea5e9; }
+        button { background: #00a884; color: #fff; font-weight: bold; cursor: pointer; }
+        button:hover { background: #008f72; }
         .app { display: none; flex-direction: column; height: 100%; overflow: hidden; }
         .tab-content { flex: 1; display: none; flex-direction: column; overflow: hidden; }
         .tab-content.active { display: flex; }
         .nav { background: #202c33; display: flex; border-top: 1px solid #2a3942; flex-shrink: 0; }
         .nav-btn { flex: 1; padding: 12px; text-align: center; color: #8696a0; background: none; border: none; font-weight: bold; font-size: 0.8rem; cursor: pointer; }
-        .nav-btn.active { color: #38bdf8; background: #111b21; border-top: 2px solid #38bdf8; }
+        .nav-btn.active { color: #00a884; background: #111b21; border-top: 2px solid #00a884; }
         .messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; background: #0b141a; }
         .msg { max-width: 75%; padding: 10px 14px; border-radius: 8px; font-size: 0.9rem; word-break: break-all; position: relative; }
-        .msg.sent { background: #0369a1; align-self: flex-end; }
+        .msg.sent { background: #005c4b; align-self: flex-end; }
         .msg.received { background: #202c33; align-self: flex-start; }
-        .msg img, .msg video { max-width: 100%; border-radius: 6px; margin-top: 5px; }
-        .tag { font-size: 0.65rem; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; color: #38bdf8; display: inline-block; margin-bottom: 4px; }
-        .view-once-box { background: #111b21; border: 1px dashed #38bdf8; padding: 10px; border-radius: 6px; text-align: center; cursor: pointer; color: #38bdf8; font-size: 0.85rem; }
-        .input-bar { background: #202c33; padding: 10px 15px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+        .msg img, .msg video, .msg audio { max-width: 100%; border-radius: 6px; margin-top: 5px; }
+        .tag { font-size: 0.65rem; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; color: #00a884; display: inline-block; margin-bottom: 4px; }
+        .view-once-box { background: #111b21; border: 1px dashed #00a884; padding: 10px; border-radius: 6px; text-align: center; cursor: pointer; color: #00a884; font-size: 0.85rem; }
+        .input-bar { background: #202c33; padding: 10px 15px; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
         .input-bar input { margin: 0; flex: 1; background: #2a3942; }
         .list-box { padding: 15px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 10px; }
-        .card { background: #111b21; padding: 12px 15px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; border-left: 4px solid #38bdf8; }
+        .card { background: #111b21; padding: 12px 15px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; border-left: 4px solid #00a884; }
         .avatar { width: 40px; height: 40px; border-radius: 50%; background: #374151; display: flex; align-items: center; justify-content: center; font-weight: bold; overflow: hidden; }
         .avatar img { width: 100%; height: 100%; object-fit: cover; }
     </style>
 </head>
 <body>
     <div class="header">
-        <span>❄️ Frost Pro</span>
+        <span>🟢 Coop Messenger</span>
         <span id="myVirtualBadge" style="font-size:0.75rem; color:#8696a0;"></span>
     </div>
     <div class="container">
         <div id="auth">
-            <h2>Frost Pro Secure Login</h2>
-            <p style="font-size:0.8rem; color:#8696a0; margin-bottom:15px;">Enter username and password to log in or create your secure account.</p>
+            <h2>Coop Messenger Login</h2>
+            <p style="font-size:0.8rem; color:#8696a0; margin-bottom:15px;">Secure End-to-End Encrypted Chat</p>
             <input type="text" id="username" placeholder="Username">
             <input type="password" id="password" placeholder="Secure Password">
             <button onclick="connect()">Login / Register</button>
         </div>
         <div class="app" id="app">
             <div class="tab-content active" id="tab-chat">
-                <div style="background: #111b21; padding: 8px 15px; font-size: 0.8rem; color: #38bdf8; border-bottom: 1px solid #2a3942; display: flex; justify-content: space-between; align-items: center;">
-                    <span id="chatTitle">🌐 General Lobby (300+ Users)</span>
-                    <button onclick="switchTab('dms')" style="width:auto; padding:3px 8px; margin:0; font-size:0.75rem; background:#2a3942;">Search by Number</button>
+                <div style="background: #111b21; padding: 8px 15px; font-size: 0.8rem; color: #00a884; border-bottom: 1px solid #2a3942; display: flex; justify-content: space-between; align-items: center;">
+                    <span id="chatTitle">🌐 General Community Lobby</span>
+                    <button onclick="switchTab('dms')" style="width:auto; padding:3px 8px; margin:0; font-size:0.75rem; background:#2a3942; color:#fff;">Search by Number</button>
                 </div>
                 <div class="messages" id="stream"></div>
-                <div id="preview" style="padding: 4px 15px; font-size: 0.75rem; color: #38bdf8; background:#111b21; display:none;">Media Attached ✓</div>
+                <div id="preview" style="padding: 4px 15px; font-size: 0.75rem; color: #00a884; background:#111b21; display:none;">Media Attached ✓</div>
                 <div class="input-bar">
-                    <label style="cursor:pointer; font-size:1.2rem;" title="Attach Media (Image/Video)">📎<input type="file" id="mediaInput" accept="image/*,video/mp4,video/webm" style="display:none;" onchange="previewMedia(this)"></label>
-                    <label style="font-size:0.75rem; color:#8696a0; display:flex; align-items:center; gap:3px; cursor:pointer;"><input type="checkbox" id="viewOnceCheck"> 1x View</label>
-                    <input type="text" id="msgText" placeholder="Type message..." onkeypress="if(event.key==='Enter') sendMsg()">
+                    <label style="cursor:pointer; font-size:1.2rem;" title="Attach Media">📎<input type="file" id="mediaInput" accept="image/*,video/mp4,audio/*" style="display:none;" onchange="previewMedia(this)"></label>
+                    <label style="font-size:0.75rem; color:#8696a0; display:flex; align-items:center; gap:2px; cursor:pointer;" title="View Once"><input type="checkbox" id="viewOnceCheck"> 1x</label>
+                    <input type="text" id="msgText" placeholder="Type a message..." onkeypress="if(event.key==='Enter') sendMsg()">
                     <button onclick="sendMsg()" style="width:40px; height:40px; border-radius:50%; padding:0; display:flex; align-items:center; justify-content:center;">➤</button>
                 </div>
             </div>
             <div class="tab-content" id="tab-dms">
                 <div class="list-box">
-                    <h3 style="color:#38bdf8; margin:0;">🔒 Private Number Lookup</h3>
-                    <p style="font-size:0.8rem; color:#8696a0; margin:0;">User directories remain hidden for privacy. Type a user's exact virtual number to connect privately.</p>
+                    <h3 style="color:#00a884; margin:0;">🔒 Secure Number Lookup</h3>
+                    <p style="font-size:0.8rem; color:#8696a0; margin:0;">User lists are hidden to protect user privacy. Enter a virtual number to chat 1-to-1.</p>
                     <div style="background:#111b21; padding:12px; border-radius:10px;">
                         <input type="text" id="lookupNum" placeholder="e.g. +1 (334) 000-0000" style="margin-top:0;">
-                        <button onclick="lookupChat()" style="margin-top:8px;">Open Secure 1-to-1 Chat</button>
+                        <button onclick="lookupChat()" style="margin-top:8px;">Open Private Chat</button>
                     </div>
-                    <div class="card" onclick="openChat('general', '🌐 General Lobby (300+ Users)')" style="cursor:pointer;">
-                        <div><strong>🌐 General Lobby (300+ Users)</strong><br><span style="font-size:0.75rem; color:#8696a0;">Public high-capacity channel</span></div>
+                    <div class="card" onclick="openChat('general', '🌐 General Community Lobby')" style="cursor:pointer;">
+                        <div><strong>🌐 General Community Lobby</strong><br><span style="font-size:0.75rem; color:#8696a0;">Public group channel</span></div>
                         <button style="width:auto; padding:5px 10px; margin:0; font-size:0.75rem;">Open</button>
                     </div>
                 </div>
             </div>
             <div class="tab-content" id="tab-settings">
                 <div class="list-box">
-                    <h3 style="color:#38bdf8; margin:0;">Secure Profile</h3>
+                    <h3 style="color:#00a884; margin:0;">Account Settings</h3>
                     <div style="background:#111b21; padding:15px; border-radius:10px; display:flex; align-items:center; gap:15px;">
                         <div class="avatar" id="myAvatar">U</div>
-                        <div><strong id="myName"></strong><br><span id="myNum" style="color:#38bdf8; font-size:0.8rem;"></span></div>
+                        <div><strong id="myName"></strong><br><span id="myNum" style="color:#00a884; font-size:0.8rem;"></span></div>
                     </div>
                     <div style="background:#111b21; padding:15px; border-radius:10px;">
-                        <label style="cursor:pointer; display:block; text-align:center; background:#2a3942; padding:10px; border-radius:8px; color:#38bdf8; font-weight:bold;">
+                        <label style="cursor:pointer; display:block; text-align:center; background:#2a3942; padding:10px; border-radius:8px; color:#00a884; font-weight:bold;">
                             Upload Permanent Avatar <input type="file" accept="image/*" style="display:none;" onchange="updateAvatar(this)">
                         </label>
                     </div>
                 </div>
             </div>
             <div class="nav">
-                <button class="nav-btn active" id="nav-chat" onclick="switchTab('chat')">💬 Chat</button>
+                <button class="nav-btn active" id="nav-chat" onclick="switchTab('chat')">💬 Chats</button>
                 <button class="nav-btn" id="nav-dms" onclick="switchTab('dms')">🔍 Lookup</button>
                 <button class="nav-btn" id="nav-settings" onclick="switchTab('settings')">⚙️ Settings</button>
             </div>
@@ -131,10 +131,7 @@ HTML = """<!DOCTYPE html>
                 body: JSON.stringify({username: me, password: pwd})
             }).then(async res => {
                 let data = await res.json();
-                if(!res.ok) {
-                    alert(data.error || "Login failed!");
-                    throw new Error(data.error || "Login failed");
-                }
+                if(!res.ok) { alert(data.error || "Login failed!"); throw new Error(); }
                 return data;
             }).then(data => {
                 myNumber = data.virtual_number;
@@ -146,7 +143,7 @@ HTML = """<!DOCTYPE html>
                 if(data.profile_pic) document.getElementById('myAvatar').innerHTML = '<img src="'+data.profile_pic+'">';
                 else document.getElementById('myAvatar').innerText = me.charAt(0).toUpperCase();
                 poll(); setInterval(poll, 6000);
-            }).catch(err => console.log(err));
+            }).catch(err => {});
         }
         function switchTab(t) {
             ['chat','dms','settings'].forEach(x => {
@@ -167,15 +164,15 @@ HTML = """<!DOCTYPE html>
             if(!num) return alert("Enter virtual number!");
             fetch('/api/lookup?num=' + encodeURIComponent(num)).then(res => res.json()).then(data => {
                 if(!data.found) return alert("No user found with number: " + num);
-                if(data.username === me) return alert("Cannot message yourself!");
-                openChat(data.username, "🔒 1-to-1: " + data.username + " (" + num + ")");
+                if(data.username === me) return alert("Cannot chat with yourself!");
+                openChat(data.username, "🔒 Encrypted 1-to-1: " + data.username);
                 document.getElementById('lookupNum').value = "";
             });
         }
         function previewMedia(input) {
             if(input.files && input.files[0]) {
                 let file = input.files[0];
-                mediaType = file.type.startsWith('video') ? 'video' : 'image';
+                mediaType = file.type.includes('video') ? 'video' : file.type.includes('audio') ? 'audio' : 'image';
                 let reader = new FileReader();
                 reader.onload = e => { mediaData = e.target.result; document.getElementById('preview').style.display = 'block'; };
                 reader.readAsDataURL(file);
@@ -186,7 +183,7 @@ HTML = """<!DOCTYPE html>
                 let reader = new FileReader();
                 reader.onload = e => {
                     fetch('/api/profile_pic', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:me, image:e.target.result})})
-                    .then(() => { document.getElementById('myAvatar').innerHTML = '<img src="'+e.target.result+'">'; alert("Permanent Avatar Updated!"); });
+                    .then(() => { document.getElementById('myAvatar').innerHTML = '<img src="'+e.target.result+'">'; alert("Avatar Updated Permanently!"); });
                 };
                 reader.readAsDataURL(input.files[0]);
             }
@@ -211,7 +208,7 @@ HTML = """<!DOCTYPE html>
         function openViewOnce(msgId, mData, mType) {
             let container = document.getElementById('vo-' + msgId);
             let content = mType === 'video' ? '<video src="'+mData+'" controls autoplay style="max-width:100%; border-radius:6px;"></video>' : '<img src="'+mData+'" style="max-width:100%; border-radius:6px;">';
-            container.innerHTML = content + '<br><span style="font-size:0.7rem; color:#ef4444;">[Expired: View Once Opened]</span>';
+            container.innerHTML = content + '<br><span style="font-size:0.7rem; color:#ef4444;">[Opened & Destroyed]</span>';
             fetch('/api/burn', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id: msgId})});
         }
         function poll() {
@@ -224,28 +221,26 @@ HTML = """<!DOCTYPE html>
                 });
                 stream.innerHTML = filtered.map((m, idx) => {
                     let isMe = m.username === me;
-                    let tagText = recipient === 'general' ? '🌐 General Lobby' : '🔒 End-to-End Encrypted 1-to-1';
+                    let tagText = recipient === 'general' ? '🌐 General Community Lobby' : '🔒 End-to-End Encrypted Private Chat';
                     let contentHtml = "";
                     if(m.text) contentHtml += '<div>'+m.text+'</div>';
                     if(m.media) {
                         if(m.view_once && !m.burned) {
-                            let label = m.media_type === 'video' ? '🎬 Tap to View Once Video' : '📷 Tap to View Once Photo';
+                            let label = m.media_type === 'video' ? '🎬 Tap to View Once Video' : m.media_type === 'audio' ? '🔊 Tap to Listen Audio' : '📷 Tap to View Once Photo';
                             contentHtml += '<div class="view-once-box" id="vo-'+idx+'" onclick="openViewOnce('+idx+', \''+m.media+'\', \''+m.media_type+'\')">'+label+'</div>';
                         } else if(m.view_once && m.burned) {
                             contentHtml += '<div style="font-size:0.8rem; color:#8696a0; font-style:italic;">[Media Opened & Destroyed]</div>';
                         } else {
-                            if(m.media_type === 'video') {
-                                contentHtml += '<video src="'+m.media+'" controls></video>';
-                            } else {
-                                contentHtml += '<img src="'+m.media+'">';
-                            }
+                            if(m.media_type === 'video') contentHtml += '<video src="'+m.media+'" controls></video>';
+                            else if(m.media_type === 'audio') contentHtml += '<audio src="'+m.media+'" controls></audio>';
+                            else contentHtml += '<img src="'+m.media+'">';
                         }
                     }
                     return `<div class="msg ${isMe ? 'sent' : 'received'}">
                         <span class="tag">${tagText}</span>
-                        ${!isMe ? '<strong style="color:#38bdf8; font-size:0.75rem; display:block;">'+m.username+'</strong>' : ''}
+                        ${!isMe ? '<strong style="color:#00a884; font-size:0.75rem; display:block;">'+m.username+'</strong>' : ''}
                         ${contentHtml}
-                        <div style="font-size:0.65rem; color:#bae6fd; text-align:right; margin-top:3px;">${m.time.split(' ')[1].substring(0,5)} ${isMe ? '✓✓ Delivered' : ''}</div>
+                        <div style="font-size:0.65rem; color:#8696a0; text-align:right; margin-top:3px;">${m.time.split(' ')[1].substring(0,5)} ${isMe ? '✓✓ Delivered' : ''}</div>
                     </div>`;
                 }).join('');
                 stream.scrollTop = stream.scrollHeight;

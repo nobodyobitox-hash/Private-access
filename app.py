@@ -7,8 +7,7 @@ DB_FILE = "coop_db.json"
 
 def db_load():
     if not os.path.exists(DB_FILE):
-        with open(DB_FILE, "w") as f:
-            json.dump({"users": {}, "chats": []}, f)
+        return {"users": {}, "chats": []}
     try:
         with open(DB_FILE, "r") as f:
             return json.load(f)
@@ -130,8 +129,18 @@ HTML = """<!DOCTYPE html>
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({username: me, password: pwd})
             }).then(async res => {
-                let data = await res.json();
-                if(!res.ok) { alert(data.error || "Login failed!"); throw new Error(); }
+                let text = await res.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch(e) {
+                    alert("Server error response: " + text);
+                    throw new Error(text);
+                }
+                if(!res.ok) {
+                    alert(data.error || "Login failed!");
+                    throw new Error(data.error);
+                }
                 return data;
             }).then(data => {
                 myNumber = data.virtual_number;
@@ -143,7 +152,7 @@ HTML = """<!DOCTYPE html>
                 if(data.profile_pic) document.getElementById('myAvatar').innerHTML = '<img src="'+data.profile_pic+'">';
                 else document.getElementById('myAvatar').innerText = me.charAt(0).toUpperCase();
                 poll(); setInterval(poll, 6000);
-            }).catch(err => {});
+            }).catch(err => console.log(err));
         }
         function switchTab(t) {
             ['chat','dms','settings'].forEach(x => {

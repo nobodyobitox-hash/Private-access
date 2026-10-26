@@ -114,7 +114,8 @@ function connect(override) {
     .then(async r=>{
         let text = await r.text();
         let d;
-        try { d = JSON.parse(text); } catch(err) { alert("Server error: " + text); throw new Error(); }
+        try { d = JSON.parse(text); } catch(err) { alert("Server parse error: " + text); throw new Error(text); }
+        if(!r.ok) { alert("Error: " + (d.error || text)); throw new Error(text); }
         return d;
     }).then(d=>{
         me=d.username; myNum=d.virtual_number;
@@ -127,7 +128,7 @@ function connect(override) {
         if(d.profile_pic) document.getElementById('myAvatar').innerHTML='<img src="'+d.profile_pic+'">';
         else document.getElementById('myAvatar').innerText=me.charAt(0).toUpperCase();
         poll(); setInterval(poll, 6000);
-    }).catch(err=>{});
+    }).catch(err=>{ alert("Login failed: " + err); });
 }
 function switchTab(t) {
     ['chat','dms','settings'].forEach(x => {

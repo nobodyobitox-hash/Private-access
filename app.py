@@ -48,7 +48,7 @@ button:hover { background: #008f72; }
 .avatar img { width: 100%; height: 100%; object-fit: cover; }
 </style>
 </head>
-<body onload="autoLogin()">
+<body onload="checkSaved()">
 <div class="header"><span>🟢 Coop Messenger</span><span id="badge" style="font-size:0.75rem; color:#8696a0;"></span></div>
 <div class="container">
 <div id="auth">
@@ -98,37 +98,36 @@ Upload Permanent Avatar <input type="file" accept="image/*" style="display:none;
 </div></div></div>
 <script>
 let me="", myNum="", recipient="general", mediaData="", mediaType="";
-function autoLogin() {
+function checkSaved() {
     let saved = localStorage.getItem('coop_user');
-    if(saved) { connect(saved); }
-    else {
-        fetch('/api/iplogin').then(r=>r.json()).then(d=>{
-            if(d.found) connect(d.username);
-        }).catch(e=>{});
+    if(saved) {
+        document.getElementById('username').value = saved;
+        connect(saved);
     }
 }
 function connect(override) {
     let u = override || document.getElementById('username').value.trim();
-    if(!u) return alert("Enter username!");
-    fetch('/api/connect', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:u})})
-    .then(async r=>{
-        let text = await r.text();
-        let d;
-        try { d = JSON.parse(text); } catch(err) { alert("Server parse error: " + text); throw new Error(text); }
-        if(!r.ok) { alert("Error: " + (d.error || text)); throw new Error(text); }
-        return d;
-    }).then(d=>{
-        me=d.username; myNum=d.virtual_number;
+    if(!u) return alert("Enter a username!");
+    
+    fetch('/api/connect', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({username: u})
+    }).then(r => r.json()).then(d => {
+        me = d.username;
+        myNum = d.virtual_number;
         localStorage.setItem('coop_user', me);
-        document.getElementById('auth').style.display='none';
-        document.getElementById('app').style.display='flex';
-        document.getElementById('badge').innerText=myNum;
-        document.getElementById('myName').innerText=me;
-        document.getElementById('myNum').innerText="Virtual #: "+myNum;
-        if(d.profile_pic) document.getElementById('myAvatar').innerHTML='<img src="'+d.profile_pic+'">';
-        else document.getElementById('myAvatar').innerText=me.charAt(0).toUpperCase();
+        document.getElementById('auth').style.display = 'none';
+        document.getElementById('app').style.display = 'flex';
+        document.getElementById('badge').innerText = myNum;
+        document.getElementById('myName').innerText = me;
+        document.getElementById('myNum').innerText = "Virtual #: " + myNum;
+        if(d.profile_pic) document.getElementById('myAvatar').innerHTML = '<img src="'+d.profile_pic+'">';
+        else document.getElementById('myAvatar').innerText = me.charAt(0).toUpperCase();
         poll(); setInterval(poll, 6000);
-    }).catch(err=>{ alert("Login failed: " + err); });
+    }).catch(err => {
+        alert("Connection error: " + err);
+    });
 }
 function switchTab(t) {
     ['chat','dms','settings'].forEach(x => {
@@ -220,15 +219,8 @@ function poll() {
 
 class H(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
-        ip = self.headers.get('X-Forwarded-For', self.client_address[0])
         if self.path in ('/', '/index.html'):
             self.send_response(200); self.end_headers(); self.wfile.write(HTML.encode())
-        elif self.path == '/api/iplogin':
-            d = load()
-            self.send_response(200); self.end_headers()
-            if ip in d["ips"] and d["ips"][ip] in d["users"]:
-                self.wfile.write(json.dumps({"found": True, "username": d["ips"][ip]}).encode())
-            else: self.wfile.write(b'{"found":false}')
         elif self.path.startswith('/api/lookup'):
             q = self.path.split('?')[1].replace('num=', '')
             d = load()
@@ -244,7 +236,6 @@ class H(http.server.BaseHTTPRequestHandler):
         else: self.send_response(404); self.end_headers()
 
     def do_POST(self):
-        ip = self.headers.get('X-Forwarded-For', self.client_address[0])
         l = int(self.headers.get('Content-Length', 0))
         data = json.loads(self.rfile.read(l).decode()) if l else {}
         d = load()
@@ -254,7 +245,6 @@ class H(http.server.BaseHTTPRequestHandler):
                 self.send_response(400); self.end_headers(); self.wfile.write(b'{"error":"Invalid username"}'); return
             if u not in d["users"]:
                 d["users"][u] = {"virtual_number": f"+1 ({random.randint(200,999)}) {random.randint(100,999)}-{random.randint(1000,9999)}", "profile_pic": ""}
-            d["ips"][ip] = u
             save(d)
             res = d["users"][u].copy(); res["username"] = u
             self.send_response(200); self.end_headers(); self.wfile.write(json.dumps(res).encode())

@@ -5,10 +5,10 @@ PORT = int(os.environ.get("PORT", 8080))
 DB = "coop.json"
 
 def load():
-    if not os.path.exists(DB): return {"users": {}, "chats": [], "ips": {}}
+    if not os.path.exists(DB): return {"users": {}, "chats": []}
     try:
         with open(DB) as f: return json.load(f)
-    except: return {"users": {}, "chats": [], "ips": {}}
+    except: return {"users": {}, "chats": []}
 
 def save(d):
     with open(DB, "w") as f: json.dump(d, f)

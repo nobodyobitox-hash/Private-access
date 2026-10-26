@@ -44,7 +44,7 @@ HTML = """<!DOCTYPE html>
         .msg { max-width: 75%; padding: 10px 14px; border-radius: 8px; font-size: 0.9rem; word-break: break-all; position: relative; }
         .msg.sent { background: #0369a1; align-self: flex-end; }
         .msg.received { background: #202c33; align-self: flex-start; }
-        .msg img { max-width: 100%; border-radius: 6px; margin-top: 5px; cursor: pointer; }
+        .msg img, .msg video { max-width: 100%; border-radius: 6px; margin-top: 5px; }
         .tag { font-size: 0.65rem; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; color: #38bdf8; display: inline-block; margin-bottom: 4px; }
         .view-once-box { background: #111b21; border: 1px dashed #38bdf8; padding: 10px; border-radius: 6px; text-align: center; cursor: pointer; color: #38bdf8; font-size: 0.85rem; }
         .input-bar { background: #202c33; padding: 10px 15px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
@@ -77,7 +77,7 @@ HTML = """<!DOCTYPE html>
                 <div class="messages" id="stream"></div>
                 <div id="preview" style="padding: 4px 15px; font-size: 0.75rem; color: #38bdf8; background:#111b21; display:none;">Media Attached ✓</div>
                 <div class="input-bar">
-                    <label style="cursor:pointer; font-size:1.2rem;" title="Attach Image">📷<input type="file" id="imgInput" accept="image/*" style="display:none;" onchange="previewImg(this)"></label>
+                    <label style="cursor:pointer; font-size:1.2rem;" title="Attach Media (Image/Video)">📎<input type="file" id="mediaInput" accept="image/*,video/mp4,video/webm" style="display:none;" onchange="previewMedia(this)"></label>
                     <label style="font-size:0.75rem; color:#8696a0; display:flex; align-items:center; gap:3px; cursor:pointer;"><input type="checkbox" id="viewOnceCheck"> 1x View</label>
                     <input type="text" id="msgText" placeholder="Type message..." onkeypress="if(event.key==='Enter') sendMsg()">
                     <button onclick="sendMsg()" style="width:40px; height:40px; border-radius:50%; padding:0; display:flex; align-items:center; justify-content:center;">➤</button>
@@ -119,7 +119,7 @@ HTML = """<!DOCTYPE html>
         </div>
     </div>
     <script>
-        let me = "", myNumber = "", recipient = "general", base64Img = "";
+        let me = "", myNumber = "", recipient = "general", mediaData = "", mediaType = "";
         function connect() {
             me = document.getElementById('username').value.trim();
             let pwd = document.getElementById('password').value.trim();
@@ -172,11 +172,13 @@ HTML = """<!DOCTYPE html>
                 document.getElementById('lookupNum').value = "";
             });
         }
-        function previewImg(input) {
+        function previewMedia(input) {
             if(input.files && input.files[0]) {
+                let file = input.files[0];
+                mediaType = file.type.startsWith('video') ? 'video' : 'image';
                 let reader = new FileReader();
-                reader.onload = e => { base64Img = e.target.result; document.getElementById('preview').style.display = 'block'; };
-                reader.readAsDataURL(input.files[0]);
+                reader.onload = e => { mediaData = e.target.result; document.getElementById('preview').style.display = 'block'; };
+                reader.readAsDataURL(file);
             }
         }
         function updateAvatar(input) {
@@ -192,22 +194,24 @@ HTML = """<!DOCTYPE html>
         function sendMsg() {
             let txt = document.getElementById('msgText').value.trim();
             let isViewOnce = document.getElementById('viewOnceCheck').checked;
-            if(!txt && !base64Img) return;
+            if(!txt && !mediaData) return;
             fetch('/api/chat', {
                 method:'POST', 
                 headers:{'Content-Type':'application/json'}, 
-                body:JSON.stringify({username:me, recipient:recipient, text:txt, image:base64Img, view_once:isViewOnce})
+                body:JSON.stringify({username:me, recipient:recipient, text:txt, media:mediaData, media_type:mediaType, view_once:isViewOnce})
             }).then(() => {
                 document.getElementById('msgText').value = "";
-                base64Img = "";
+                mediaData = "";
+                mediaType = "";
                 document.getElementById('preview').style.display = 'none';
                 document.getElementById('viewOnceCheck').checked = false;
                 poll();
             });
         }
-        function openViewOnce(msgId, imgData) {
+        function openViewOnce(msgId, mData, mType) {
             let container = document.getElementById('vo-' + msgId);
-            container.innerHTML = '<img src="' + imgData + '" style="max-width:100%; border-radius:6px;"><br><span style="font-size:0.7rem; color:#ef4444;">[Expired: View Once Opened]</span>';
+            let content = mType === 'video' ? '<video src="'+mData+'" controls autoplay style="max-width:100%; border-radius:6px;"></video>' : '<img src="'+mData+'" style="max-width:100%; border-radius:6px;">';
+            container.innerHTML = content + '<br><span style="font-size:0.7rem; color:#ef4444;">[Expired: View Once Opened]</span>';
             fetch('/api/burn', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id: msgId})});
         }
         function poll() {
@@ -223,13 +227,18 @@ HTML = """<!DOCTYPE html>
                     let tagText = recipient === 'general' ? '🌐 General Lobby' : '🔒 End-to-End Encrypted 1-to-1';
                     let contentHtml = "";
                     if(m.text) contentHtml += '<div>'+m.text+'</div>';
-                    if(m.image) {
+                    if(m.media) {
                         if(m.view_once && !m.burned) {
-                            contentHtml += '<div class="view-once-box" id="vo-'+idx+'" onclick="openViewOnce('+idx+', \''+m.image+'\')">📷 Tap to View Once Photo</div>';
+                            let label = m.media_type === 'video' ? '🎬 Tap to View Once Video' : '📷 Tap to View Once Photo';
+                            contentHtml += '<div class="view-once-box" id="vo-'+idx+'" onclick="openViewOnce('+idx+', \''+m.media+'\', \''+m.media_type+'\')">'+label+'</div>';
                         } else if(m.view_once && m.burned) {
-                            contentHtml += '<div style="font-size:0.8rem; color:#8696a0; font-style:italic;">[Photo Opened & Destroyed]</div>';
+                            contentHtml += '<div style="font-size:0.8rem; color:#8696a0; font-style:italic;">[Media Opened & Destroyed]</div>';
                         } else {
-                            contentHtml += '<img src="'+m.image+'">';
+                            if(m.media_type === 'video') {
+                                contentHtml += '<video src="'+m.media+'" controls></video>';
+                            } else {
+                                contentHtml += '<img src="'+m.media+'">';
+                            }
                         }
                     }
                     return `<div class="msg ${isMe ? 'sent' : 'received'}">
@@ -320,7 +329,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 "username": data.get("username"),
                 "recipient": data.get("recipient", "general"),
                 "text": data.get("text", ""),
-                "image": data.get("image", ""),
+                "media": data.get("media", ""),
+                "media_type": data.get("media_type", "image"),
                 "view_once": data.get("view_once", False),
                 "burned": False,
                 "time": str(datetime.now())
@@ -332,7 +342,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         elif self.path == '/api/burn':
             msg_id = data.get("id")
             if msg_id is not None and msg_id < len(db["chats"]):
-                db["chats"][msg_id]["image"] = ""
+                db["chats"][msg_id]["media"] = ""
                 db["chats"][msg_id]["burned"] = True
                 db_save(db)
             self.send_response(200)

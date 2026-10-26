@@ -124,10 +124,18 @@ HTML = """<!DOCTYPE html>
             me = document.getElementById('username').value.trim();
             let pwd = document.getElementById('password').value.trim();
             if(!me || !pwd) return alert("Enter both username and password!");
-            fetch('/api/connect', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username: me, password: pwd})})
-            .then(res => {
-                if(res.status === 401) { alert("Incorrect password for this username!"); throw new Error("Unauthorized"); }
-                return res.json();
+            
+            fetch('/api/connect', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username: me, password: pwd})
+            }).then(async res => {
+                let data = await res.json();
+                if(!res.ok) {
+                    alert(data.error || "Login failed!");
+                    throw new Error(data.error || "Login failed");
+                }
+                return data;
             }).then(data => {
                 myNumber = data.virtual_number;
                 document.getElementById('auth').style.display = 'none';
@@ -138,7 +146,7 @@ HTML = """<!DOCTYPE html>
                 if(data.profile_pic) document.getElementById('myAvatar').innerHTML = '<img src="'+data.profile_pic+'">';
                 else document.getElementById('myAvatar').innerText = me.charAt(0).toUpperCase();
                 poll(); setInterval(poll, 6000);
-            }).catch(err => {});
+            }).catch(err => console.log(err));
         }
         function switchTab(t) {
             ['chat','dms','settings'].forEach(x => {
@@ -282,8 +290,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
             if u in db["users"]:
                 if db["users"][u].get("password", "") != pwd:
                     self.send_response(401)
+                    self.send_header("Content-type", "application/json; charset=utf-8")
                     self.end_headers()
-                    self.wfile.write(b'{"error":"Incorrect password"}')
+                    self.wfile.write(json.dumps({"error": "Incorrect password for this username!"}).encode('utf-8'))
                     return
             else:
                 db["users"][u] = {
